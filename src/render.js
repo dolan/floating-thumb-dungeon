@@ -70,8 +70,8 @@ export function renderWorld(game) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   drawControls();
   drawHUD(game);
-  if (game.won) drawBanner('DUNGEON CLEAR', 'demo complete — refresh to replay');
-  if (game.player.hp <= 0) drawBanner('YOU DIED', 'refresh to retry');
+  if (game.won) drawBanner('DUNGEON CLEAR', game, '#9ad');
+  else if (game.player.hp <= 0) drawBanner('YOU DIED', game, '#c66');
 }
 
 // ---------- tiles ----------
@@ -337,14 +337,28 @@ function heart(cx, cy, s) {
   ctx.fill();
 }
 
-function drawBanner(title, sub) {
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(0, view.h / 2 - 50, view.w, 100);
-  ctx.fillStyle = '#fff';
+function drawBanner(title, game, titleColor) {
+  // Fade the end screen in over its sequence; the restart prompt only appears
+  // once the sequence has armed (game.over.ready).
+  const o = game.over;
+  const fade = o ? Math.min(1, o.t / 0.6) : 0;
+  const ready = !!(o && o.ready);
+
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = 'rgba(0,0,0,0.62)';
+  ctx.fillRect(0, view.h / 2 - 56, view.w, 112);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = titleColor || '#fff';
   ctx.font = 'bold 28px monospace';
-  ctx.fillText(title, view.w / 2, view.h / 2 - 8);
-  ctx.font = '13px monospace';
-  ctx.fillStyle = '#aab';
-  ctx.fillText(sub, view.w / 2, view.h / 2 + 22);
+  ctx.fillText(title, view.w / 2, view.h / 2 - 10);
+  if (ready) {
+    // gentle pulse so "tap to restart" reads as interactive
+    const pulse = 0.6 + 0.4 * Math.abs(Math.sin(o.t * 3));
+    ctx.globalAlpha = fade * pulse;
+    ctx.fillStyle = '#cdd6f0';
+    ctx.font = '14px monospace';
+    ctx.fillText('tap to restart', view.w / 2, view.h / 2 + 24);
+  }
+  ctx.restore();
 }

@@ -10,11 +10,13 @@ import { sfx } from './audio.js';
 import { setupDebug } from './debug.js';
 
 const STEP = 1 / 60;          // fixed update step (s)
+const OVER_SEQUENCE = 1.1;    // s: banner fade-in / settle before "tap to restart" arms
 const game = {
   player: null,
   rooms: null, room: null, roomKey: 'A',
   enemies: [], items: [], projectiles: [], effects: [],
   won: false,
+  over: null,                 // {type:'dead'|'win', t, ready} while on the end screen
 };
 
 // Optional subsystems wired in by later modules. Kept as hooks so the loop
@@ -29,7 +31,8 @@ game.systems = systems;
 function update(dt) {
   pollKeyboard();
   const p = game.player;
-  if (p.hp <= 0 || game.won) return;
+  if (p.hp <= 0 || game.won) { updateOver(dt); return; }
+  game.over = null;                         // alive & playing — no end screen
 
   if (game.graceT > 0) game.graceT -= dt;   // brief "settle in" window per room
 
@@ -59,6 +62,20 @@ function update(dt) {
   checkWin(game);
 }
 
+// Run the end-screen sequence: the banner fades in, then after OVER_SEQUENCE a
+// fresh tap/click/key restarts (handled by the listener in boot()).
+function updateOver(dt) {
+  if (!game.over) game.over = { type: game.won ? 'win' : 'dead', t: 0, ready: false };
+  game.over.t += dt;
+  if (game.over.t >= OVER_SEQUENCE) game.over.ready = true;
+}
+
+function restartGame() {
+  game.over = null;
+  game.player = makePlayer(0, 0);
+  buildWorld(game);                         // fresh rooms → enemies/items respawn
+}
+
 let last = 0, acc = 0;
 function frame(t) {
   if (!last) last = t;
@@ -79,6 +96,13 @@ async function boot() {
   initInput(canvas);
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+  // Tap / click / key on the end screen restarts — but only once the death/win
+  // sequence has finished arming, so the input that killed you can't bounce you
+  // straight into a new run.
+  const onOverPress = () => { if (game.over && game.over.ready) restartGame(); };
+  window.addEventListener('pointerdown', onOverPress);
+  window.addEventListener('keydown', onOverPress);
 
   // wire optional subsystems if their modules are present
   await wireSystems();
