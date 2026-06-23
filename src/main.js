@@ -1,7 +1,7 @@
 // src/main.js
 // Entry point: canvas + resize setup, fixed-timestep loop, world boot.
 
-import { initInput, pollKeyboard, consumeA, consumeB } from './input.js';
+import { initInput, pollKeyboard, consumeA, consumeB, resetInput } from './input.js';
 import { initRender, resize, renderWorld } from './render.js';
 import { makePlayer, updatePlayer } from './player.js';
 import { buildWorld, checkDoorTransition, checkWin } from './world.js';
@@ -65,7 +65,10 @@ function update(dt) {
 // Run the end-screen sequence: the banner fades in, then after OVER_SEQUENCE a
 // fresh tap/click/key restarts (handled by the listener in boot()).
 function updateOver(dt) {
-  if (!game.over) game.over = { type: game.won ? 'win' : 'dead', t: 0, ready: false };
+  if (!game.over) {
+    game.over = { type: game.won ? 'win' : 'dead', t: 0, ready: false };
+    resetInput();                           // clear any queued action from the killing blow
+  }
   game.over.t += dt;
   if (game.over.t >= OVER_SEQUENCE) game.over.ready = true;
 }
@@ -74,6 +77,7 @@ function restartGame() {
   game.over = null;
   game.player = makePlayer(0, 0);
   buildWorld(game);                         // fresh rooms → enemies/items respawn
+  resetInput();                             // the restart tap's own edge doesn't carry in
 }
 
 let last = 0, acc = 0;
@@ -100,9 +104,11 @@ async function boot() {
   // Tap / click / key on the end screen restarts — but only once the death/win
   // sequence has finished arming, so the input that killed you can't bounce you
   // straight into a new run.
+  // Restart on pointer/key UP (after the gesture's own edge has been set), so
+  // restartGame's resetInput() clears it instead of it leaking into the new run.
   const onOverPress = () => { if (game.over && game.over.ready) restartGame(); };
-  window.addEventListener('pointerdown', onOverPress);
-  window.addEventListener('keydown', onOverPress);
+  window.addEventListener('pointerup', onOverPress);
+  window.addEventListener('keyup', onOverPress);
 
   // wire optional subsystems if their modules are present
   await wireSystems();

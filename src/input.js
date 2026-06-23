@@ -66,6 +66,17 @@ export function consumeB() {
   const b = pendingB; pendingB = null; return b; // {ax,ay} | null
 }
 
+// Drop all queued/in-progress input. Called on death and on restart so a
+// pending A/B (or an in-progress touch) can't carry over into the next run.
+export function resetInput() {
+  pendingA = false;
+  pendingB = null;
+  left = null;
+  right = null;
+  input.move.x = 0; input.move.y = 0; input.moveActive = false;
+  input.aim.active = false;
+}
+
 // --- geometry helpers ---
 function rect() { return canvas.getBoundingClientRect(); }
 function halfSplit(clientX) { return clientX < rect().left + rect().width / 2; }
