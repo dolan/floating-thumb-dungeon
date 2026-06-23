@@ -5,7 +5,7 @@ A mobile-first, top-down dungeon crawler built as a **capability demo for a touc
 **▶ Live demo: https://dolan.github.io/floating-thumb-dungeon/** (open on a phone, portrait)
 
 <p align="center">
-  <img src="docs/gameplay.png" alt="Gameplay: the hero holding a sword between two goblins, with the floating joystick (lower-left) and the action rocker showing a throw-aim (lower-right)" width="320">
+  <img src="docs/gameplay.png" alt="Gameplay: the hero mid-throw-aim, a dashed aim arrow projecting from the character toward a goblin, with the floating joystick (lower-left) and the action rocker (lower-right)" width="320">
 </p>
 
 Vanilla HTML5 Canvas + ES modules. No build step, no dependencies.
