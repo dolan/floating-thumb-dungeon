@@ -4,7 +4,7 @@
 // (via sprites.js) and procedural placeholders otherwise.
 
 import { TILE, T, tileAt, roomPx } from './room.js';
-import { getControls, input, TUNABLES } from './input.js';
+import { getControls, input, TUNABLES, MODES } from './input.js';
 import * as sprites from './sprites.js';
 
 let canvas, ctx;
@@ -60,6 +60,7 @@ export function renderWorld(game) {
   for (const it of game.items) if (!it.taken) drawItem(it);
   for (const e of game.enemies) if (!e.dead) drawEnemy(e);
   drawPlayer(game.player);
+  drawAimIndicator(game.player);
   for (const pr of game.projectiles) drawProjectile(pr);
   drawEffects(game.effects);
 
@@ -185,6 +186,33 @@ function drawProjectile(pr) {
   ctx.restore();
 }
 
+// World-space throw aim, drawn FROM the player along input.aim while aiming.
+// This is the primary aim readout — on the character, where the eyes are and
+// the thumb can't occlude it. Subtle by design (it's a cue, not the centerpiece).
+function drawAimIndicator(p) {
+  if (!MODES.aimIndicator || !input.aim.active) return;
+  const ax = input.aim.x, ay = input.aim.y;
+  const oy = -4;                       // lift to roughly chest height
+  const start = 9, end = 30;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,186,120,0.85)';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([2, 2.5]);
+  ctx.beginPath();
+  ctx.moveTo(p.x + ax * start, p.y + oy + ay * start);
+  ctx.lineTo(p.x + ax * end, p.y + oy + ay * end);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // chevron at the end, pointing along the aim
+  ctx.translate(p.x + ax * end, p.y + oy + ay * end);
+  ctx.rotate(Math.atan2(ay, ax));
+  ctx.fillStyle = 'rgba(255,186,120,0.95)';
+  ctx.beginPath();
+  ctx.moveTo(3.5, 0); ctx.lineTo(-2.2, -2.4); ctx.lineTo(-2.2, 2.4); ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawEffects(effects) {
   if (!effects) return;
   for (const fx of effects) {
@@ -258,21 +286,19 @@ function drawRocker(R) {
   ctx.font = 'bold 13px monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('A', R.ox, R.oy);
-  // aim arrow while B active
+  // Small local stub under the thumb while aiming — just enough tactile
+  // confirmation. The primary, readable aim is drawn on the character itself
+  // (drawAimIndicator), where the thumb can't hide it.
   if (active) {
     let dx = R.x - R.ox, dy = R.y - R.oy;
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len, uy = dy / len;
-    ctx.strokeStyle = 'rgba(255,170,110,0.95)';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255,170,110,0.55)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(R.ox, R.oy);
-    ctx.lineTo(R.ox + ux * 48, R.oy + uy * 48);
+    ctx.lineTo(R.ox + ux * 16, R.oy + uy * 16);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(255,170,110,0.95)';
-    ctx.beginPath();
-    ctx.arc(R.ox + ux * 48, R.oy + uy * 48, 5, 0, 7);
-    ctx.fill();
   }
   ctx.restore();
 }

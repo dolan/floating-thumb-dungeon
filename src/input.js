@@ -14,6 +14,13 @@ export const TUNABLES = {
   deadzone: 10,       // joystick deadzone (CSS px)
 };
 
+// Behavior modes (flippable live via window.dbg for A/B feel testing).
+export const MODES = {
+  fireOnRelease: true,  // B throws on lift (push → see → adjust → release) vs instantly on crossing
+  faceAim: true,        // hero turns to face the throw while aiming (read by player.js)
+  aimIndicator: true,   // draw the world-space aim indicator from the player (read by render.js)
+};
+
 // Input snapshot consumed by the game each fixed step.
 export const input = {
   move: { x: 0, y: 0 },     // normalized direction * analog speed (0..1)
@@ -108,7 +115,8 @@ function onTouchEnd(e) {
       left = null;
     }
     if (right && t.identifier === right.id) {
-      // Resolve on release if still ARMED (didn't cross B_THRESHOLD).
+      // Resolve on release: a quick small touch is a tap (A); a release while
+      // aiming throws (B) along the last aimed direction.
       if (right.state === 'ARMED') {
         const dx = right.x - right.ox, dy = right.y - right.oy;
         const dist = Math.hypot(dx, dy);
@@ -116,6 +124,8 @@ function onTouchEnd(e) {
         if (dt <= TUNABLES.TAP_MS && dist < TUNABLES.B_THRESHOLD) {
           pendingA = true; // tap → A = use weapon
         }
+      } else if (right.state === 'B_ACTIVE') {
+        if (MODES.fireOnRelease && right.lastAim) pendingB = right.lastAim; // release → B = throw
       }
       right = null;
       input.aim.active = false;
@@ -150,14 +160,18 @@ function updateRocker(e) {
   const dx = right.x - right.ox, dy = right.y - right.oy;
   const dist = Math.hypot(dx, dy);
   if (right.state === 'ARMED' && dist >= TUNABLES.B_THRESHOLD) {
-    // Crossed threshold → commit B (throw) on crossing.
+    // Crossed threshold → enter aim mode. With fireOnRelease (default) the throw
+    // is deferred to touchend so you can push → see the aim → adjust → release.
+    // Legacy fire-on-cross commits immediately (flip via dbg.fireOnRelease(false)).
     right.state = 'B_ACTIVE';
-    pendingB = unitAim(dx, dy);
+    right.lastAim = unitAim(dx, dy);
+    if (!MODES.fireOnRelease) pendingB = right.lastAim;
   }
   if (right.state === 'B_ACTIVE') {
     input.aim.active = true;
     const a = unitAim(dx, dy);
     input.aim.x = a.ax; input.aim.y = a.ay;
+    if (dist >= TUNABLES.B_THRESHOLD) right.lastAim = a;  // remember the last real aim
   }
 }
 

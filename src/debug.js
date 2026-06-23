@@ -5,6 +5,7 @@
 // until you call something. Type `dbg.help()` for the list.
 
 import { TILE } from './room.js';
+import { MODES } from './input.js';
 import { makeItem } from './weapons.js';
 import { addEnemy } from './enemy.js';
 import { debugWarp } from './world.js';
@@ -29,11 +30,18 @@ export function setupDebug(game) {
         "clearEnemies() / killAll()   remove / kill all enemies",
         "room('A'|'B'|'C')        warp to a room (centered)",
         "face(dx,dy) attack() throwIt()   aim + drive the A / B actions",
+        "fireOnRelease(on=true)   B throws on lift (aim+adjust) vs instantly on cross",
+        "aimIndicator(on=true)    show the on-character throw-aim indicator",
+        "faceAim(on=true)         hero turns to face the throw while aiming",
         "scenario(name)           presets: 'wall','arsenal','win','clear'",
         "state()                  dump a summary of the current state",
       ].join('\n'));
       return 'see console above';
     },
+
+    fireOnRelease(on = true) { MODES.fireOnRelease = on; return `fireOnRelease=${on}`; },
+    aimIndicator(on = true) { MODES.aimIndicator = on; return `aimIndicator=${on}`; },
+    faceAim(on = true) { MODES.faceAim = on; return `faceAim=${on}`; },
 
     god(on = true) { p().god = on; return `god=${on}`; },
     heal() { p().hp = p().maxHp; return p().hp; },
@@ -95,6 +103,7 @@ export function setupDebug(game) {
         room: game.roomKey, weapon: p().weapon, hp: p().hp + '/' + p().maxHp,
         pos: [+p().x.toFixed(0), +p().y.toFixed(0)],
         flags: { god: !!p().god, noClip: !!p().noClip, freezeEnemies: !!game.dbgFreeze, graceT: +game.graceT.toFixed(1) },
+        modes: { ...MODES },
         enemies, items: game.items.map(i => i.kind),
       };
       console.log(s);

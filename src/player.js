@@ -3,7 +3,7 @@
 // facing, weapon equip/swap, and attack timing. Combat resolution lives in
 // weapons.js / world step; this module owns the player's own state.
 
-import { input, setFacing } from './input.js';
+import { input, setFacing, MODES } from './input.js';
 import { moveCircle } from './room.js';
 import { sfx } from './audio.js';
 
@@ -12,7 +12,7 @@ export function makePlayer(x, y) {
     x, y, r: 5,
     speed: 64,               // logical px / sec
     fx: 0, fy: 1,            // facing unit vector (default: south)
-    hp: 6, maxHp: 6,
+    hp: 8, maxHp: 8,         // a little roomier so you can settle into the controls
     weapon: 'fists',
     moving: false,
     animT: 0,                // walk-cycle phase
@@ -44,6 +44,13 @@ export function updatePlayer(p, dt, room) {
     p.animT += dt * (4 + mag * 4);
   } else {
     p.animT = 0;
+  }
+
+  // While aiming a throw, face the aim so the sprite + held item point where it
+  // will go — the "apparent" cue that the throw is no longer hidden under the thumb.
+  if (MODES.faceAim && input.aim.active) {
+    p.fx = input.aim.x; p.fy = input.aim.y;
+    setFacing({ x: p.fx, y: p.fy });
   }
 
   if (p.attackT > 0) p.attackT -= dt;
