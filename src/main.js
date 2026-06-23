@@ -7,6 +7,7 @@ import { makePlayer, updatePlayer } from './player.js';
 import { buildWorld, checkDoorTransition, checkWin } from './world.js';
 import * as sprites from './sprites.js';
 import { sfx } from './audio.js';
+import { setupDebug } from './debug.js';
 
 const STEP = 1 / 60;          // fixed update step (s)
 const game = {
@@ -32,7 +33,7 @@ function update(dt) {
 
   if (game.graceT > 0) game.graceT -= dt;   // brief "settle in" window per room
 
-  updatePlayer(p, dt, game.room);
+  updatePlayer(p, dt, game.room);   // (also applies collision-aware knockback)
 
   // footstep cadence while moving
   if (p.moving) {
@@ -40,12 +41,6 @@ function update(dt) {
     if (game.stepT <= 0) { sfx.play('step'); game.stepT = 0.30; }
   } else {
     game.stepT = 0;
-  }
-
-  // apply any knockback impulse from being hit
-  if (p.knock) {
-    p.x += p.knock.x; p.y += p.knock.y;
-    p.knock = null;
   }
 
   // resolve discrete control edges → weapon actions
@@ -100,6 +95,7 @@ async function boot() {
   sfx.load().then(a => console.log('[boot] sfx loaded:', a.loaded));
 
   window.game = game;            // debug handle (harmless; handy for tuning)
+  setupDebug(game);              // attaches window.dbg — type dbg.help()
   requestAnimationFrame(frame);
 }
 

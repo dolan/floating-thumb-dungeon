@@ -86,6 +86,15 @@ export function checkDoorTransition(game) {
   return true;
 }
 
+// Debug helper: jump straight to a room and drop the player in its center.
+export function debugWarp(game, key) {
+  if (!game.rooms[key]) return;
+  enter(game, key);
+  const px = roomPx(game.room);
+  game.player.x = px.w / 2;
+  game.player.y = px.h / 2;
+}
+
 export function checkWin(game) {
   if (game.won) return;
   // win when every room has been populated and no enemies remain anywhere

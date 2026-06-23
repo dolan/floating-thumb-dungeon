@@ -82,6 +82,10 @@ Everything is small, dependency-free ES modules — edit and refresh.
 - **New sprite** — drop PNG(s) in `assets/sprites/` and register them in `assets/sprites/manifest.json` (`actors` take 8 per-direction files keyed `S,SE,E,…`; `objects` take one file). Missing entries fall back to a procedural placeholder, so the game never hard-breaks on a missing asset.
 - **New sound** — drop an `.ogg` in `assets/audio/sfx/`, add it to the `SFX` map in [`src/audio.js`](src/audio.js), and call `sfx.play('yourName')` from the relevant event.
 
+### Debugging
+
+A console debug API is attached at `window.dbg` ([`src/debug.js`](src/debug.js)) for setting up test scenarios without playing through to them. Open the browser console and type `dbg.help()` for the full list — e.g. `dbg.god()`, `dbg.scenario('wall')` (repro the wall-collision case), `dbg.room('C')`, `dbg.spawn('skeleton')`, `dbg.give('gun')`, `dbg.killAll()`, `dbg.state()`. It does nothing unless called, and can be removed for a production build.
+
 ### Project layout
 
 ```

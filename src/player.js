@@ -23,6 +23,13 @@ export function makePlayer(x, y) {
 }
 
 export function updatePlayer(p, dt, room) {
+  // apply knockback through collision so a hit near a wall can't bury us in it
+  if (p.knock) {
+    const r = moveCircle(room, p.x, p.y, p.r, p.knock.x, p.knock.y);
+    p.x = r.x; p.y = r.y;
+    p.knock = null;
+  }
+
   const mv = input.move;
   const mag = Math.hypot(mv.x, mv.y);
   p.moving = input.moveActive && mag > 0.02;
@@ -31,8 +38,9 @@ export function updatePlayer(p, dt, room) {
     p.fx = mv.x / mag;
     p.fy = mv.y / mag;
     setFacing({ x: p.fx, y: p.fy });
-    const r = moveCircle(room, p.x, p.y, p.r, mv.x * p.speed * dt, mv.y * p.speed * dt);
-    p.x = r.x; p.y = r.y;
+    const vx = mv.x * p.speed * dt, vy = mv.y * p.speed * dt;
+    if (p.noClip) { p.x += vx; p.y += vy; }       // debug: ignore walls
+    else { const r = moveCircle(room, p.x, p.y, p.r, vx, vy); p.x = r.x; p.y = r.y; }
     p.animT += dt * (4 + mag * 4);
   } else {
     p.animT = 0;
@@ -44,6 +52,7 @@ export function updatePlayer(p, dt, room) {
 }
 
 export function hurtPlayer(p, dmg, fromX, fromY) {
+  if (p.god) return;                // debug invulnerability
   if (p.hurtT > 0) return;          // i-frames
   p.hp = Math.max(0, p.hp - dmg);
   p.hurtT = 0.6;

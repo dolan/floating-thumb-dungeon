@@ -30,7 +30,15 @@ export function makeEnemySystem() {
   return { step };
 }
 
+// Debug helper: drop a live enemy into the current room.
+export function addEnemy(game, kind, x, y) {
+  const e = makeEnemy(kind, x, y);
+  game.enemies.push(e);
+  return e;
+}
+
 function step(game, dt) {
+  if (game.dbgFreeze) return;       // debug: enemies frozen in place
   const p = game.player;
   const room = game.room;
   for (const e of game.enemies) {

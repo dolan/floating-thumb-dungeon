@@ -34,21 +34,32 @@ export function isSolidPx(room, x, y) {
   return tileAt(room, tx, ty) === T.WALL;
 }
 
-function circleHitsWall(room, x, y, r) {
-  // sample the 4 corners of the circle's bounding box + center
-  if (isSolidPx(room, x, y)) return true;
+// How many of the circle's samples (center + 4 bbox corners) are inside a wall.
+// 0 == fully clear. Used both to block moves and to detect/escape penetration.
+function penetration(room, x, y, r) {
+  let n = 0;
+  if (isSolidPx(room, x, y)) n++;
   for (const ox of [-r, r]) for (const oy of [-r, r]) {
-    if (isSolidPx(room, x + ox, y + oy)) return true;
+    if (isSolidPx(room, x + ox, y + oy)) n++;
   }
-  return false;
+  return n;
 }
 
 // Axis-separated movement so sliding along walls feels right.
+//
+// When the circle is clear (p0 == 0) a move is allowed only if it stays clear —
+// so you stop exactly `r` px off a wall and never penetrate it. If the circle is
+// somehow already overlapping a wall (e.g. shoved by knockback at a corner), a
+// move is allowed as long as it doesn't go DEEPER (penetration <= current). That
+// guarantees an escape hatch: you can always slide out, never get trapped.
 export function moveCircle(room, x, y, r, dx, dy) {
-  let nx = x + dx;
-  if (!circleHitsWall(room, nx, y, r)) x = nx;
-  let ny = y + dy;
-  if (!circleHitsWall(room, x, ny, r)) y = ny;
+  const p0 = penetration(room, x, y, r);
+  const allowed = (px, py) => {
+    const p = penetration(room, px, py, r);
+    return p === 0 || p <= p0;
+  };
+  if (allowed(x + dx, y)) x += dx;
+  if (allowed(x, y + dy)) y += dy;
   return { x, y };
 }
 
