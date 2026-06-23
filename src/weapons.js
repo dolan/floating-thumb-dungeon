@@ -14,6 +14,15 @@ const WEAPONS = {
   gun:   { melee: false, dmg: 2, cd: 0.5, bulletSpeed: 165 },
 };
 
+// Throw (B) tuning. `range` = max travel distance in px. The ranged hierarchy:
+// the gun's SHOOT (A) is the long-range option (~180px); a thrown sword goes
+// medium, a thrown rock is shortest — you have to get in close to chuck it.
+const THROW = {
+  sword: { spd: 160, range: 108, dmg: 3 },  // medium-short, a committed lob
+  rock:  { spd: 130, range: 56,  dmg: 2 },  // shortest — close-range only
+  gun:   { spd: 130, range: 80,  dmg: 2 },  // ditching the gun, not really aiming it
+};
+
 export function makeItem(kind, x, y) {
   return { kind, x, y, bob: Math.random() * 6, taken: false, noPickT: 0.55 };
 }
@@ -74,12 +83,12 @@ function throwItem(game, aim) {
   const p = game.player;
   if (p.weapon === 'fists') return;   // nothing to throw with bare hands
   const itemKind = p.weapon;
-  const spd = itemKind === 'rock' ? 150 : 132;
-  const dmg = itemKind === 'sword' ? 3 : 2;
+  const cfg = THROW[itemKind] || THROW.rock;
   game.projectiles.push({
     x: p.x + aim.ax * 8, y: p.y + aim.ay * 8 - 4,
-    vx: aim.ax * spd, vy: aim.ay * spd,
-    kind: 'thrown', itemKind, dmg, r: 3, life: 1.6, fromPlayer: true,
+    vx: aim.ax * cfg.spd, vy: aim.ay * cfg.spd,
+    kind: 'thrown', itemKind, dmg: cfg.dmg, r: 3,
+    range: cfg.range, life: 4, fromPlayer: true,   // capped by distance; life is just a safety net
   });
   p.weapon = 'fists';                 // item leaves the hand; revert to fists
   p.cooldown = 0.25;
@@ -93,6 +102,7 @@ function step(game, dt) {
 
   for (const pr of game.projectiles) {
     pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
+    if (pr.kind === 'thrown') pr.range -= Math.hypot(pr.vx, pr.vy) * dt;   // distance-capped
     if (isSolidPx(room, pr.x, pr.y)) { land(game, pr); pr.dead = true; continue; }
     let hit = false;
     for (const e of game.enemies) {
@@ -103,7 +113,8 @@ function step(game, dt) {
       }
     }
     if (hit) { land(game, pr); pr.dead = true; continue; }
-    if (pr.life <= 0) { land(game, pr); pr.dead = true; }
+    // a thrown item drops when it runs out of range; any projectile dies on the life safety net
+    if ((pr.kind === 'thrown' && pr.range <= 0) || pr.life <= 0) { land(game, pr); pr.dead = true; }
   }
   game.projectiles = game.projectiles.filter(pr => !pr.dead);
 

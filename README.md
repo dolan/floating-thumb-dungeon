@@ -76,7 +76,7 @@ export const TUNABLES = {
 
 Everything is small, dependency-free ES modules — edit and refresh.
 
-- **New / retuned weapon** — add an entry to `WEAPONS` in [`src/weapons.js`](src/weapons.js) (`reach`, `arc`, `dmg`, `cd`, or `bulletSpeed` for ranged) and a case in `drawHeldWeapon()`.
+- **New / retuned weapon** — add an entry to `WEAPONS` in [`src/weapons.js`](src/weapons.js) (`reach`, `arc`, `dmg`, `cd`, or `bulletSpeed` for ranged) and a case in `drawHeldWeapon()`. Per-item **throw distance** lives in the `THROW` table (`spd`, `range`, `dmg`) — the gun's shoot is the long-range option, sword throws medium, rock shortest.
 - **New / retuned enemy** — add an entry to `DEFS` in [`src/enemy.js`](src/enemy.js) (`hp`, `speed`, `sight`, `range`, `dmg`, `atkCd`, `sprite`) and place it in `spawnRoomContents()`.
 - **New room / layout** — edit `buildRooms()` in [`src/world.js`](src/world.js): `makeRoom(name, w, h, { pillars, doors })`. Doors link by `{ x, y, dir, to, toDoor }`.
 - **New sprite** — drop PNG(s) in `assets/sprites/` and register them in `assets/sprites/manifest.json` (`actors` take 8 per-direction files keyed `S,SE,E,…`; `objects` take one file). Missing entries fall back to a procedural placeholder, so the game never hard-breaks on a missing asset.
