@@ -1,0 +1,54 @@
+{
+  "actors": {
+    "hero": {
+      "size": 68,
+      "drawSize": 30,
+      "anchorY": 0.82,
+      "files": {
+        "S": "hero_south.png",
+        "SE": "hero_south-east.png",
+        "E": "hero_east.png",
+        "NE": "hero_north-east.png",
+        "N": "hero_north.png",
+        "NW": "hero_north-west.png",
+        "W": "hero_west.png",
+        "SW": "hero_south-west.png"
+      }
+    },
+    "goblin": {
+      "size": 56,
+      "drawSize": 24,
+      "anchorY": 0.8,
+      "files": {
+        "S": "goblin_south.png",
+        "SE": "goblin_south-east.png",
+        "E": "goblin_east.png",
+        "NE": "goblin_north-east.png",
+        "N": "goblin_north.png",
+        "NW": "goblin_north-west.png",
+        "W": "goblin_west.png",
+        "SW": "goblin_south-west.png"
+      }
+    },
+    "skeleton": {
+      "size": 64,
+      "drawSize": 28,
+      "anchorY": 0.82,
+      "files": {
+        "S": "skeleton_south.png",
+        "SE": "skeleton_south-east.png",
+        "E": "skeleton_east.png",
+        "NE": "skeleton_north-east.png",
+        "N": "skeleton_north.png",
+        "NW": "skeleton_north-west.png",
+        "W": "skeleton_west.png",
+        "SW": "skeleton_south-west.png"
+      }
+    }
+  },
+  "objects": {
+    "sword": { "file": "sword.png", "drawSize": 15, "anchorY": 0.62 },
+    "gun":   { "file": "gun.png",   "drawSize": 15, "anchorY": 0.62 },
+    "rock":  { "file": "rock.png",  "drawSize": 13, "anchorY": 0.6 }
+  }
+}
