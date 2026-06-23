@@ -8,10 +8,11 @@
 
 // ---- Tunables (the one place to tweak during testing) ----
 export const TUNABLES = {
-  TAP_MS: 180,        // max press duration that still counts as a tap (A)
-  B_THRESHOLD: 26,    // displacement (CSS px) past which the rocker commits to B (throw)
-  maxRadius: 56,      // joystick clamp radius (CSS px)
-  deadzone: 10,       // joystick deadzone (CSS px)
+  TAP_MS: 180,          // max press duration that still counts as a tap (A)
+  B_THRESHOLD: 26,      // displacement (CSS px) past which the rocker commits to B (throw)
+  CANCEL_THRESHOLD: 14, // pull back inside this radius of the contact point → releasing cancels the throw
+  maxRadius: 56,        // joystick clamp radius (CSS px)
+  deadzone: 10,         // joystick deadzone (CSS px)
 };
 
 // Behavior modes (flippable live via window.dbg for A/B feel testing).
@@ -136,7 +137,10 @@ function onTouchEnd(e) {
           pendingA = true; // tap → A = use weapon
         }
       } else if (right.state === 'B_ACTIVE') {
-        if (MODES.fireOnRelease && right.lastAim) pendingB = right.lastAim; // release → B = throw
+        // release beyond the cancel radius throws; inside it the throw is cancelled.
+        const dx = right.x - right.ox, dy = right.y - right.oy;
+        const cancelled = Math.hypot(dx, dy) < TUNABLES.CANCEL_THRESHOLD;
+        if (MODES.fireOnRelease && !cancelled && right.lastAim) pendingB = right.lastAim; // release → B = throw
       }
       right = null;
       input.aim.active = false;
@@ -179,10 +183,15 @@ function updateRocker(e) {
     if (!MODES.fireOnRelease) pendingB = right.lastAim;
   }
   if (right.state === 'B_ACTIVE') {
-    input.aim.active = true;
-    const a = unitAim(dx, dy);
-    input.aim.x = a.ax; input.aim.y = a.ay;
-    if (dist >= TUNABLES.B_THRESHOLD) right.lastAim = a;  // remember the last real aim
+    // Pulling back inside CANCEL_THRESHOLD arms a cancel: the aim indicator
+    // hides (so "release now = no throw" reads clearly) and lastAim freezes.
+    const aiming = dist >= TUNABLES.CANCEL_THRESHOLD;
+    input.aim.active = aiming;
+    if (aiming) {
+      const a = unitAim(dx, dy);
+      input.aim.x = a.ax; input.aim.y = a.ay;
+      right.lastAim = a;            // keep the shown aim and the thrown aim in sync
+    }
   }
 }
 
@@ -235,6 +244,6 @@ export function pollKeyboard() { if (!left) updateMoveKeyboard(); }
 export function getControls() {
   return {
     left: left ? { ox: left.ox, oy: left.oy, x: left.x, y: left.y, radius: TUNABLES.maxRadius } : null,
-    right: right ? { ox: right.ox, oy: right.oy, x: right.x, y: right.y, state: right.state, threshold: TUNABLES.B_THRESHOLD } : null,
+    right: right ? { ox: right.ox, oy: right.oy, x: right.x, y: right.y, state: right.state, threshold: TUNABLES.B_THRESHOLD, cancel: TUNABLES.CANCEL_THRESHOLD } : null,
   };
 }

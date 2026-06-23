@@ -275,21 +275,30 @@ function drawStick(L) {
 function drawRocker(R) {
   ctx.save();
   const active = R.state === 'B_ACTIVE';
+  // In B_ACTIVE but with the aim hidden, the thumb is inside the cancel radius:
+  // releasing now cancels the throw. Show that by greying the rocker.
+  const cancelZone = active && !input.aim.active;
   // outer ring = B (throw) zone
-  ring(R.ox, R.oy, R.threshold + 22, active ? 'rgba(255,150,90,0.22)' : 'rgba(255,200,120,0.18)',
-    active ? 'rgba(255,150,90,0.8)' : 'rgba(255,200,120,0.5)');
+  ring(R.ox, R.oy, R.threshold + 22,
+    cancelZone ? 'rgba(150,150,160,0.18)' : active ? 'rgba(255,150,90,0.22)' : 'rgba(255,200,120,0.18)',
+    cancelZone ? 'rgba(170,170,180,0.6)' : active ? 'rgba(255,150,90,0.8)' : 'rgba(255,200,120,0.5)');
+  // faint inner ring marking the cancel radius (visible while aiming)
+  if (active) {
+    ctx.strokeStyle = cancelZone ? 'rgba(200,200,210,0.85)' : 'rgba(255,255,255,0.28)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(R.ox, R.oy, R.cancel, 0, 7); ctx.stroke();
+  }
   // inner disk = A (use) zone
-  ctx.fillStyle = active ? 'rgba(255,170,110,0.35)' : 'rgba(255,220,150,0.5)';
+  ctx.fillStyle = cancelZone ? 'rgba(150,150,160,0.4)' : active ? 'rgba(255,170,110,0.35)' : 'rgba(255,220,150,0.5)';
   ctx.beginPath(); ctx.arc(R.ox, R.oy, R.threshold * 0.7, 0, 7); ctx.fill();
-  // labels
-  ctx.fillStyle = 'rgba(20,15,10,0.8)';
+  // label: 'A' normally; '×' when releasing would cancel
+  ctx.fillStyle = cancelZone ? 'rgba(20,20,25,0.85)' : 'rgba(20,15,10,0.8)';
   ctx.font = 'bold 13px monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('A', R.ox, R.oy);
-  // Small local stub under the thumb while aiming — just enough tactile
-  // confirmation. The primary, readable aim is drawn on the character itself
-  // (drawAimIndicator), where the thumb can't hide it.
-  if (active) {
+  ctx.fillText(cancelZone ? '×' : 'A', R.ox, R.oy);
+  // Aim stub under the thumb — only while actually aiming (hidden in the cancel
+  // zone). The primary, readable aim is on the character (drawAimIndicator).
+  if (active && input.aim.active) {
     let dx = R.x - R.ox, dy = R.y - R.oy;
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len, uy = dy / len;

@@ -54,10 +54,11 @@ The rocker's feel is the thing most worth adjusting on a real device. All knobs 
 
 ```js
 export const TUNABLES = {
-  TAP_MS: 180,      // max press duration that still counts as a tap (A)
-  B_THRESHOLD: 26,  // displacement (CSS px) past which the rocker commits to B (throw)
-  maxRadius: 56,    // joystick clamp radius (CSS px) — thumb travel for full speed
-  deadzone: 10,     // joystick deadzone (CSS px) — ignored jitter near the origin
+  TAP_MS: 180,           // max press duration that still counts as a tap (A)
+  B_THRESHOLD: 26,       // displacement (CSS px) past which the rocker arms B (throw)
+  CANCEL_THRESHOLD: 14,  // pull back inside this radius and release → cancel the throw
+  maxRadius: 56,         // joystick clamp radius (CSS px) — thumb travel for full speed
+  deadzone: 10,          // joystick deadzone (CSS px) — ignored jitter near the origin
 };
 ```
 
@@ -65,10 +66,11 @@ export const TUNABLES = {
 |------|-----------|-----------|
 | **`TAP_MS`** | stricter taps (must flick fast); fewer accidental A's | forgiving taps, but A feels laggier and overlaps B |
 | **`B_THRESHOLD`** | twitchy throws, easy to fire B by accident | B requires a deliberate shove; almost no accidental throws |
+| **`CANCEL_THRESHOLD`** | harder to cancel (must pull right back to center) | easier to cancel, but a small wobble back can eat a throw |
 | **`maxRadius`** | very sensitive stick, small thumb travel | gentler stick, needs a big reach for full-speed run |
 | **`deadzone`** | reacts to the tiniest motion (can feel jittery) | rock-steady when still, but ignores small nudges |
 
-**Design variation — when does B fire?** The default commits B *the instant* the thumb crosses `B_THRESHOLD` (snappy, great for twin-stick-style throwing). The plan's alternative is to commit B *on release* instead — letting the player wind up and re-aim before letting go. To switch, move the `pendingB = unitAim(...)` line out of the threshold-crossing branch in `updateRocker()` and into the `ARMED`-release branch in `onTouchEnd()` of `src/input.js`. Try both on-device; "fire on cross" feels more arcade, "fire on release" more deliberate.
+**How B commits (and cancels).** By default B fires *on release* — push past `B_THRESHOLD` to arm, see the on-character aim, adjust, and lift to throw. A quick push-and-release still works as a flick (timing play); holding lets you aim (visual play) — same gesture, the player self-selects. **To cancel**, drag your thumb back inside `CANCEL_THRESHOLD` of the contact point and release: the aim arrow hides, the rocker greys with an `×`, and no throw fires (you keep the item). The legacy *fire-on-cross* behavior (commit instantly on crossing, no aim window or cancel) is available via `dbg.fireOnRelease(false)`.
 
 ---
 
